@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  <meta name="author" content="董沅鑫, yuanxin.me@gmail.com">
+  
+  
+  
+  <title>消息中间件系列之-RocketMQ(一)基础概念 | 鲁班博客</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+    <meta name="keywords" content="消息中间件系列-RocketMQ,消息中间件,RocketMQ,">
+  
+
+  <script>
+    console.log('\n%c Hexo-theme-bmw v4.0 ' + '%c 🎉 https://github.com/dongyuanxin/theme-bmw 🎉\n' + '\n%c View demo online ' + '%c 🔍 https://godbmw.com/ 🔍  \n' , 'color: #fadfa3; background: #030307; padding:3px 0;', '', 'color: #fadfa3; background: #030307; padding:3px 0;', '');
+  </script>
+
+  
+
+  
+
+  
+    <link rel="icon" href="/images/favicon.ico">
+    <link rel="apple-touch-icon" href="/images/touch-icon.png">
+  
+
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/icon/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+
+  <script src="/js/util.js"></script>
+<script src="/js/valine.min.js"></script>
+
+  
+
+  
+    <link href="https://cdn.bootcss.com/aplayer/1.10.1/APlayer.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcss.com/aplayer/1.10.1/APlayer.min.js" async></script>
+  
+
+  
+    <link href="https://cdn.bootcss.com/social-share.js/1.0.16/css/share.min.css" rel="stylesheet">
+  
+  
+  <script src="//cdn.bootcss.com/jquery/3.3.1/jquery.min.js" async></script>
+  
+  
+    <script src="//cdn.jsdelivr.net/npm/leancloud-storage@3.11.0/dist/av-min.js"></script>
+  
+
+</head>
+
+  <body>
+
+    
+
+    <div id="app">
+
+      <div class="header-wrap">
+  <header>
+    <div class="site-brand">
+      <div class="site-title">
+        <a href="/">鲁班</a>
+      </div>
+    </div>
+    <nav class="site-navigation">
+      <ul class="nav-menu">
+      
+        <li class="nav-item" data-path="/">
+          
+            <a href="/" target="_self">
+              主页
+            </a>
+          
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          
+            <a href="/archives/" target="_self">
+              归档
+            </a>
+          
+        </li>
+      
+        <li class="nav-item" data-path="/categories/">
+          
+            <a href="/categories/" target="_self">
+              分类
+            </a>
+          
+        </li>
+      
+        <li class="nav-item" data-path="/tags/">
+          
+            <a href="/tags/" target="_self">
+              标签
+            </a>
+          
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          
+            <a href="/friends/" target="_self">
+              友链
+            </a>
+          
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          
+            <a href="/about/" target="_self">
+              关于
+            </a>
+          
+        </li>
+      
+        <li class="nav-item" data-path>
+          
+            <a href="javascript:void(0);" v-else>抓到我</a>
+            <ul class="nav-menu--dropdown">
+              
+                <li>
+                  <a href="https://github.com/dongyuanxin" target="_blank">
+                    Github
+                  </a>
+                </li>
+              
+                <li>
+                  <a href="https://www.zhihu.com/people/godbmw/activities" target="_blank">
+                    知乎
+                  </a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+      </ul>
+    </nav>
+    <i class="iconfont icon-menu"></i>
+  </header>
+</div>
+
+<script>
+  let links = document.querySelectorAll('.nav-item');
+  for(let link of links){
+    let childrenLink = link.querySelector('ul');
+    link.addEventListener('mouseenter', () => {
+      if(childrenLink) {
+        childrenLink.className = "nav-menu--dropdown active";
+      }
+    })
+    link.addEventListener('mouseleave', () => {
+      if(childrenLink) {
+        childrenLink.className = "nav-menu--dropdown";
+      }
+    })
+  }
+  let rootRealPath = getRealPath(window.location.pathname, true);
+  for(let link of links) {
+    let linkPath = link.getAttribute("data-path");
+    if(linkPath && getRealPath(linkPath, true) === rootRealPath) {
+      link.className = "nav-item hover";
+    }
+  }
+
+  let iconMenu = document.querySelector("i.iconfont.icon-menu"),
+    iconMenuClicked = false;
+  let navDOM = document.querySelector("nav.site-navigation");
+  iconMenu.addEventListener("click", () => {
+    iconMenuClicked 
+      ? navDOM.className = "site-navigation active"
+      : navDOM.className = "site-navigation";
+    iconMenuClicked = !iconMenuClicked;
+  })
+</script>
+
+      
+
+
+
+
+
+
+
+
+<div class="container post-index">
+
+  
+
+<div class="post">
+  <h1 class="article-title">
+    <span>消息中间件系列之-RocketMQ(一)基础概念</span>
+  </h1>
+  <div class="article-top-meta">
+    <span>
+      发布 : 
+      2019-05-30
+    </span>
+    
+      <span>
+        分类 : 
+          <a href="/categories/消息中间件系列-RocketMQ/">
+            消息中间件系列-RocketMQ
+          </a>
+      </span>
+    
+    
+      <span>
+        浏览 : <span class="article-timer" data-identity="消息中间件系列之-RocketMQ(一）基本概念"></span>
+      </span>
+    
+  </div>
+
+  
+
+  <div class="article-content">
+    <div class="markdown-body">
+      <p></p>
+<h2 id="消息中间件简介"><a href="#消息中间件简介" class="headerlink" title="消息中间件简介"></a>消息中间件简介</h2><p>  什么是消息中间件，说法不一，说说我的理解</p>
+<p>  消息中间件就是实现一个消息队列（Message Queue，简称就是MQ）,就是把原本要马上处理的一个任务，放到消息中，这样就可以一定程度上解决系统瞬间压力增大的问题，当然其作用可以总结为：</p>
+<p>  削峰填谷（主要解决瞬时写压力大于应用服务能力导致消息丢失、系统奔溃等问题）</p>
+<p>  系统解耦（解决不同重要程度、不同能力级别系统之间依赖导致一死全死）</p>
+<p>  提升性能（当存在一对多调用时，可以发一条消息给消息系统，让消息系统通知相关系统）</p>
+<p>  蓄流压测（线上有些链路不好压测，可以通过堆积一定量消息再放开来压测）</p>
+<h2 id="常用消息队列对比"><a href="#常用消息队列对比" class="headerlink" title="常用消息队列对比"></a>常用消息队列对比</h2>
+<p> <table><tr><th></th><th></th><th>kafka</th><th>RocketMQ</th><th>RabbitMQ</th></tr><tr><td>定位</td><td>设计定位</td><td>          系统之间的数据流管道，实时处理数据<br>例如：常规的消息系统、网站活性跟踪、监控数据收集日志</td><td>          非日志的可靠数据传输，例如：订单、交易、充值、流计算、消息推送</td><td>        可靠消息传输，与RocketMQ类似</td></tr><tr><td rowspan="9">基础对比</td><td>成熟度</td><td>日志领域成熟</td><td>成熟</td><td>成熟</td></tr><tr><td>所属社区/公司</td><td>apache</td><td>Alibaba开发，已加入到Apache下</td><td>Mozilla Public License</td></tr><tr><td>社区活跃度</td><td>高</td><td>中</td><td>高</td></tr><tr><td>api完备程度</td><td>高</td><td>高</td><td>高</td></tr><tr><td>文档完备程度</td><td>高</td><td>高</td><td>高</td></tr><tr><td>开发语言</td><td>Scala</td><td>java</td><td>Erlang</td></tr><tr><td>支持协议</td><td>一套自己设计的基于二进制TCP的协议</td><td>自行定义的一套（社区提供JMS 不成熟）</td><td>AMQP</td></tr><tr><td>客户端语言</td><td>C/C++、python、Go、Erlang、.Net、Ruby、node.js、php等</td><td>java</td><td>java、C、C++、python、PHP等</td></tr><tr><td>持久化方式</td><td>磁盘文件</td><td>磁盘文件</td><td>内存、文件</td></tr><tr><td rowspan="12">可用性、可靠性比较</td><td>部署方式</td><td>单机/集群</td><td>单机/集群</td><td>单机/集群</td></tr><tr><td>集群管理</td><td>zookeeper</td><td>name server</td><td></td></tr><tr><td>master选举方式</td><td>从jsr中自动选举一个leader</td><td>不支持自动选举master，通过设定brokername、brokerId实现，brokename相同,brokerId=0为master,其他为slave</td><td>最早加入集群的broker</td></tr><tr><td>主从切换</td><td>自动切换</td><td>不支持自动切换</td><td>自动切换</td></tr><tr><td>可用性</td><td>非常高，分布式、主从</td><td>非常高，分布式、主从</td><td>高，主从，采用镜像模式实现，数据量大的时候可能产生性能瓶颈</td></tr><tr><td>数据可靠性</td><td>很好，支持producer单条发送、同步刷盘、同步复制，但是这样的场景下性能明显下降</td><td>很好，支持支持producer单条发送、broker支持同步刷盘、异步刷盘、同步双写、异步复制</td><td>好，producer支持同步/异步ack，支持队列数据持久化，镜像模式中支持主从同步</td></tr><tr><td>消息写入能力</td><td>非常好，每条十个字节测试，百万条/s</td><td>很好，每条十个字节测试，单机单broker约7w/s，单机3broker约12w/s</td><td>RAm约为RocketMQ的1/2，Disk的性能约为RAM的1/3</td></tr><tr><td>性能稳定性</td><td>队列、分区多的时候性能不稳定，明显下降，消息堆积时性能稳定</td><td>队列较多的时候性能稳定</td><td>消息堆积时，性能不稳定，明显下降</td></tr><tr><td>单机支持队列数</td><td>单机超过64个队列/分区，load会发生明显飙高现象，队列越多，load越高，发送消息时间明显增加</td><td>单机支持最高5w个队列，load不会发生明显变化</td><td>依赖于内存</td></tr><tr><td>堆积能力</td><td>非常好，消息存储在log中，每个分区一个log</td><td>非常好</td><td>一般</td></tr><tr><td>复制备份</td><td>消息先写入leader的log，followers从leader中pull，pull到数据以后先ack leader，然后写入log，ISR 中维护与leader同步的列表，落后太多的follower会被删除掉</td><td>同步双写，异步复制，slave启动线程从master中拉数据</td><td>普通模式下不复制，镜像模式下，消息先到master，然后写到slave</td></tr><tr><td>消息投递实时性</td><td>毫秒级</td><td>第二列</td><td>第三列</td></tr><tr><td rowspan="13">功能对比</td><td>顺序消费</td><td>支持顺序消费，但是一台broker宕机之后，就会产生消息乱序</td><td>支持顺序消费，在顺序消费场景下，消费失效时，消费队列会暂停</td><td>支持顺序消费，但是如果一个消费失效，此消息的顺序就会被打乱</td></tr><tr><td>定时消息</td><td>不支持</td><td>开源版本仅支持定时level</td><td>不支持</td></tr><tr><td>事务消息</td><td>不支持</td><td>支持</td><td>不支持</td></tr><tr><td>broker端消息过滤</td><td>不支持</td><td>支持，通过tag过滤，类似于子topic</td><td>不支持</td></tr><tr><td>消息查询</td><td>不支持</td><td>支持，根据MessageId查询，支持根据MessageKey查询消息</td><td>不支持</td></tr><tr><td>消息失败重试</td><td>不支持</td><td>支持</td><td>支持</td></tr><tr><td>消息重新消费</td><td>支持通过修改offset来重新消费</td><td>支持按照时间来重新消费</td><td>不支持</td></tr><tr><td>发送端负载均衡</td><td>可自由指定</td><td>可自由指定</td><td>需要单独loadbalancer支持</td></tr><tr><td>消费并行度</td><td>消费并行度和分区一致</td><td>          顺序消费：消费并行度和分区一致<br>          乱序消费：消费服务器的消费线程数之和</td><td>第三列</td></tr><tr><td>消费方式</td><td>consumer pull</td><td>consumer pull/broker push</td><td>broker push</td></tr><tr><td>批量发送</td><td>支持</td><td>不支持</td><td>不支持</td></tr><tr><td>消息清理</td><td>指定文件保存时间，过期删除</td><td>指定文件保存时间，过期删除</td><td>可用内存少于40%（默认），触发gc</td></tr><tr><td>访问权限控制</td><td>无</td><td>无</td><td>类似数据库，需要配置用户名与密码</td></tr><tr><td rowspan="3">运维</td><td>系统维护</td><td>scala语言开发，维护成本高</td><td>java语言开发，维护成本低</td><td>Erlang语言开发，维护成本高</td></tr><tr><td>部署依赖</td><td>zookeeper</td><td>nameserver</td><td>Erlang环境</td></tr><tr><td>后台管理</td><td>官网不提供，第三方开发工具可以使用，不用重新开发</td><td>官方提供，rocketmq-console</td><td>官方提供，rabbitmq-admin</td></tr><tr><td rowspan="2">总结</td><td>优点</td><td>          1：在高吞吐、低延迟、高可用、集群扩展、集群容错上有非常好的表现；<br>          2：producer端提供缓存，压缩功能，可以提升性能，提高效率；<br>          3：提供顺序消费能力；<br>          4：提供多种客户端语言；<br>          5：完善生态，在大数据处理方面有大量配套设施</td><td>          1：在高吞吐、低延时、高可用上有非常好的表现，消息堆积时，性能也很好；<br>          2：api，系统设计都更加适合在业务处理场景；<br>          3：支持多种消费方式；<br>          4：支持broker消息过滤；<br>          5：支持事务；<br>          6：提供消息顺序消费能力，consumer可以水平扩展，消费能力很强；<br>          7：集群规模在50左右，单日可处理消息上百亿，经过大数据量考验，比较稳定可靠。</td><td>          1：在高吞吐，高可用上比较前两者有所不如；<br>          2：支持多种客户端语言，支持amqp协议；<br>          3：由于Erlang语言的特性，性能也比较好，使用RAM模式时，性能很好；<br>          4：管理界面比较丰富，在互联网公司也有比较大规模的应用</td></tr><tr><td>缺点</td><td>          1：消费集群数受到分区数目的限制；<br>          2：单机topic多时，性能会明显下降；<br>          3：不支持事务</td><td>          1：相比于kafka，使用者比较少，生态不够完善，消息堆积，吞吐率上也有所不如；<br>          2：不支持主从自动切换，master失效后，消费者要一定的时间才能感知；<br>          3：客户端只支持java</td><td>          1：erlang语言难度比较大，集群不支持动态扩展；<br>          2：不支持事务，消息吞吐能力有限；<br>          3：消息堆积时，性能会明显下降</td></tr></table><br>{% raw %}</p>
+<h2 id="RocketMQ简介"><a href="#RocketMQ简介" class="headerlink" title="RocketMQ简介"></a>RocketMQ简介</h2><p>RocketMQ是阿里巴巴开源的一款分布式、队列模型的消息中间件，其主要的组成部分包括：</p>
+<p>NameServer、Broker（代理）、Producer(消息生产者)、Consumer(消息消费者)</p>
+<h3 id="NameServer"><a href="#NameServer" class="headerlink" title="NameServer"></a>NameServer</h3><p>NameServer:rocketMQ名称服务器，一个几乎无状态节点，可集群部署，节点之间没有任何的信息同步</p>
+<h3 id="Broker"><a href="#Broker" class="headerlink" title="Broker"></a>Broker</h3><p>Broker：消息中转角色，负责存储和转发消息，broker分为master和slave</p>
+<pre><code>一个master可以对应多个slave，但是一个slave只能对应一个master，
+master和slave的对应关系通过指定相同的brokername，不同的brokerid来定义，
+brockerId为0的时候就为master，否则为slave，然后所有broker和nameserver上的节点
+建立长连接，定时注册topic信息到所有的nameserver
+</code></pre><h3 id="Producer"><a href="#Producer" class="headerlink" title="Producer"></a>Producer</h3><p>producer:消息生产者</p>
+<pre><code>Producer与nameserver其中一个节点建立连接，定期从nameserver中获取topic信息
+并且提供该topic信息的master建立长连接，producer也可以集群部署
+</code></pre><h3 id="Consumer"><a href="#Consumer" class="headerlink" title="Consumer"></a>Consumer</h3><p>Consumer:消息消费者</p>
+<pre><code>Consumer与Name Server集群中的其中一个节点建立长连接，定期从Name Server取Topic路由信息
+并且提供Topic服务的Master、Slave建立长连接，并且定时向Master、Slave发送心跳
+Consumer既可以从Master订阅消息，也可以从Slave订阅消息，订阅规则由Broker配置规定
+</code></pre>
+    </div>
+  </div>
+  
+    <div class="copy-right">
+      <div class="markdown-body">
+        <blockquote>
+        
+        
+          本文作者 : 鲁班 <br>
+        
+        原文链接 : <a href>http://yoursite.com/2019/05/30/消息中间件系列之-RocketMQ(一）基本概念/</a><br>
+        版权声明 : 本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可协议。转载请注明出处！
+        </blockquote>
+      </div>
+    </div>
+  
+  
+  
+    <div class="social-share" style="margin-top: -2rem" data-wechat-qrcode-title="<p>微信扫一扫</p>" data-wechat-qrcode-helper="<p>微信右上角, 扫一扫分享</p>" data-sites="qzone, qq, weibo, douban">
+  <span style="color: #6b7487; font-size: 1.4rem;">分享到: </span>
+</div>
+<script src="https://cdn.bootcss.com/social-share.js/1.0.16/js/social-share.min.js" async></script>
+  
+
+  
+    <div id="reward">
+  
+    <p id="reward-meta">知识 & 情怀 | 二者兼得</p>
+  
+  <button id="reward-btn">
+    
+    <span>投食</span>
+  </button>
+  <div id="reward-qrcode">
+    
+      <div class="reward-qrcode--container">
+        <img class="qrcode-img" src="/images/wechat.png" alt="微信扫一扫, 向我投食">
+        <p class="qrcode-meta">微信扫一扫, 向我投食</p>
+      </div>
+    
+  </div>
+
+</div>
+
+<script>
+  (() => {
+    let button = document.querySelector('#reward-btn'),
+      qrcode = document.querySelector('#reward-qrcode'),
+      display = false;
+    
+    button.addEventListener('click', () => {
+      qrcode.style.display = display ? 'none' : 'block'
+      display = !display
+    }, false)
+  })()
+</script>
+  
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+      <span>
+        
+          <i class="iconfont icon-06tags"></i>标签: 
+          
+          <span class="span--tag">
+            <a href="/tags/消息中间件/">
+              #消息中间件
+            </a>
+          </span>
+          
+          <span class="span--tag">
+            <a href="/tags/RocketMQ/">
+              #RocketMQ
+            </a>
+          </span>
+          
+        
+      </span>
+    </div>
+    <div class="article-meta pull-right">
+    </div>
+  </div>
+</div>
+
+
+  <aside id="sidebar">
+    <p id="sidebar-header"></p>
+    <ol id="sidebar-toc"></ol>
+  </aside>
+  <script async>setTimeout(generateToc, 10);</script>
+
+
+  <nav class="post-navigation">
+    
+    
+      <div class="nav-next">
+        下一篇:
+        <a href="/2019/05/30/消息中间件系列之-RocketMQ（二）单机安装/" target="_self">消息中间件系列之-RocketMQ(二)单机安装</a>
+        <i class="iconfont icon-next"></i>
+      </div>
+    
+  </nav>
+
+  
+    <a href="#comment" class="comment-anchor"></a>
+<div class="comment-title"><i class="iconfont icon-footprint"></i> 留下足迹 <i class="iconfont icon-footprint"></i></div>
+<div id="vcomments"></div>
+
+<script defer>
+  if( true ) {
+    let path = getRealPath()
+    new Valine({
+      el: "#vcomments",
+      appId: "Hyq9wkH495DgNHWhDQCOfQSp-gzGzoHsz",
+      appKey: "WaR7nrzhliHj9aVwdQzkdlGd",
+      notify: false,
+      verify: false,
+      avatar: "robohash",
+      placeholder: "正确填写邮箱, 才能及时收到回复哦♪(^∇^*)",
+      path
+    });
+  }
+</script>
+   
+
+  
+    <script defer>
+const valineAPI = (() => {
+  try {
+    AV.init("Hyq9wkH495DgNHWhDQCOfQSp-gzGzoHsz", "WaR7nrzhliHj9aVwdQzkdlGd");
+  } catch(error) {}
+  const isExist = (identity) => {
+    identity = identity || getRealPath();
+    let query = new AV.Query('Timer');
+    return new Promise((resolve, reject) => {
+      query.equalTo("identity", identity);
+      query.find().then(results => {
+        resolve(results.length > 0);
+      }, error => reject(error));
+    })
+  }
+
+  const _get = (identity) => {
+    let query = null;
+    if(identity && identity instanceof Array){
+      let querys = [];
+      for(let i = 0; i < identity.length; ++i) {
+        querys[i] = new AV.Query('Timer');
+        querys[i].equalTo('identity', identity[i]);
+      }
+      query = AV.Query.or.apply(null ,querys);
+    } else {
+      identity = identity || getRealPath();
+      query = new AV.Query("Timer");
+      query.equalTo("identity", identity);
+    }
+
+    return new Promise((resolve, reject) => {
+      query.find()
+      .then(results => resolve(results))
+      .catch(error => reject(error))
+    })
+  }
+
+  const create = (identity) => {
+    identity = identity || getRealPath();
+    return new Promise((resolve, reject) => {
+      let Todo = AV.Object.extend('Timer');
+      let todo = new Todo();
+      todo.set("times", 1);
+      todo.set("identity", identity);
+      todo.save().then(res => resolve(true), error => reject(error));
+    })
+  }
+
+  const update = (identity) => {
+    identity = identity || getRealPath();
+    return new Promise((resolve, reject) => {
+      let query = new AV.Query('Timer');
+      query.equalTo("identity", identity);
+      query.find().then(todos => {
+        todos.forEach(todo => {
+          todo.set("times", todo.attributes.times + 1);
+        });
+        return AV.Object.saveAll(todos);
+      }).then(todos => resolve(true), error => reject(error));
+    })
+  }
+
+  return {
+    isExist,
+    _get,
+    update,
+    create
+  }
+})()
+
+const calcAndWriteTimes = () => {
+  let isPost = true;
+
+  let timerAllDOM = document.querySelectorAll(".article-timer");
+
+  if(isPost) {
+    let identity = timerAllDOM[0].getAttribute("data-identity");
+    valineAPI.isExist(identity)
+    .then(exist => {
+      if(exist) {
+        return valineAPI.update(identity);
+      }
+      return new Promise(resolve => resolve(true));
+    })
+    .then( succuess => valineAPI._get(identity))
+    .then( result => timerAllDOM[0].innerText = result[0].attributes.times)
+    .catch(error => console.log(error.message))
+    return ;
+  }
+
+  let timerDOMCache = {};
+
+  for(let timerDOM of timerAllDOM) {
+    let identity = timerDOM.getAttribute("data-identity");
+    if(timerDOMCache.hasOwnProperty(identity)){
+      timerDOMCache[identity].dom.push(timerDOM);
+    }else{
+      timerDOMCache[identity] = {
+        dom: [timerDOM],
+        times: undefined
+      };
+    }
+  }
+
+  let identities = Object.keys(timerDOMCache);
+  valineAPI._get(identities).then(results => {
+    for(let result of results) {
+      let {identity, times} = result.attributes;
+      timerDOMCache[identity].times = times;
+      timerDOMCache[identity].dom.map(item => item.innerText = times);
+    }
+    for(let identity of identities) {
+      if(timerDOMCache[identity].times){
+        continue;
+      }
+      timerDOMCache[identity].dom.map(item => item.innerText = 1);
+      valineAPI.create(identity);
+    }
+  }).catch(error => console.log(error.message))
+}
+
+if(true){
+  calcAndWriteTimes();
+}
+</script>
+   
+
+</div>
+
+
+      <footer>
+  <p class="site-info">
+    博客已运行<span id="time-to-now"></span><span class="my-face">(●'◡'●)ﾉ♥</span>
+    <br>
+    <!--Theme - <a href="https://github.com/dongyuanxin/theme-bmw">BMW</a> | Made With 💗 | Powered by <a href="https://godbmw.com/">GodBMW</a>-->
+    <br>
+    
+  </p>
+</footer>
+
+
+
+<script>
+const timeToNowDOM = document.querySelector("#time-to-now");
+const startTimestamp = new Date(2019, 4, 29).getTime();
+
+const updateTimeStr = () => {
+  let offset = parseInt(
+      (new Date().getTime() - startTimestamp) / 1000,
+      10
+    ),
+    day = Math.floor(offset / 86400),
+    hour = Math.floor((offset % 86400) / 3600),
+    minute = Math.floor(((offset % 86400) % 3600) / 60),
+    second = Math.floor(((offset % 86400) % 3600) % 60);
+  timeToNowDOM.innerHTML =
+    day + "天" + hour + "小时" + minute + "分钟" + second + "秒";
+  setTimeout(updateTimeStr, 500);
+}
+
+setTimeout(updateTimeStr, 500);
+</script>
+
+
+      <div class="back-to-top hidden">
+  <span>
+    <i class="iconfont icon-60"></i><span></span>%
+  </span>
+</div>
+
+<script>
+const updateIconToTop = percent => {
+  let dom = document.querySelector(".back-to-top span span");
+  dom.innerText = percent;
+  if(percent < 1) {
+    document.querySelector(".back-to-top").className = "back-to-top hidden";
+  } else {
+    document.querySelector(".back-to-top").className = "back-to-top";
+  }
+}
+
+const handleScoll = () => {
+  let isRunning = false;
+  return () => {
+    if (isRunning) return;
+    isRunning = true;
+    window.requestAnimationFrame(timestamp => {
+      let scrollTop =
+          document.documentElement.scrollTop || document.body.scrollTop,
+        scrollHeight =
+          document.documentElement.scrollHeight ||
+          document.body.scrollHeight,
+        clientHeight =
+          document.documentElement.clientHeight ||
+          document.body.clientHeight;
+      isRunning = false;
+      if (scrollTop <= 1) {
+        updateIconToTop(0);
+        return;
+      }
+      if (scrollTop + clientHeight >= scrollHeight) {
+        updateIconToTop(100);
+      } else {
+        updateIconToTop(parseInt(
+          100 * scrollTop / (scrollHeight - clientHeight),
+          10
+        ));
+      }
+    });
+  };
+}
+
+const backToTop = () => {
+  let scrollTop =
+      document.documentElement.scrollTop || document.body.scrollTop,
+    delay = 10,
+    time = 200;
+  if (scrollTop <= 20) {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    return;
+  }
+  let step = Math.ceil(scrollTop * delay / time);
+  let timer = setInterval(() => {
+    scrollTop =
+      document.documentElement.scrollTop || document.body.scrollTop;
+    if (scrollTop - step <= 0) {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      clearInterval(timer);
+    } else {
+      document.documentElement.scrollTop = scrollTop - step;
+      document.body.scrollTop = scrollTop - step;
+    }
+  }, delay);
+}
+
+document.addEventListener("scroll", handleScoll(), false);
+
+document.querySelector(".back-to-top").addEventListener("click", backToTop, false);
+
+</script>
+
+    </div>
+
+    
+      <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+<script>
+  (() => {
+    const mathjaxConfig = {
+      showProcessingMessages: false, //关闭js加载过程信息
+      messageStyle: "none", //不显示信息
+      jax: ["input/TeX", "output/HTML-CSS"],
+      tex2jax: {
+        inlineMath: [["$", "$"], ["\\(", "\\)"]], //行内公式选择符
+        displayMath: [["$$", "$$"], ["\\[", "\\]"]], //段内公式选择符
+        skipTags: ["script", "noscript", "style", "textarea", "pre", "code", "a"] //避开某些标签
+      },
+      "HTML-CSS": {
+        availableFonts: ["STIX", "TeX"], //可选字体
+        showMathMenu: false //关闭右击菜单显示
+      }
+    }
+
+    let mathjaxInterval = setInterval(() => {
+      if(!window.MathJax){
+        return;
+      }
+      window.MathJax.Hub.Config(mathjaxConfig)
+      window.MathJax.Hub.Queue(["Typeset", MathJax.Hub, document.getElementById('app')])
+
+      clearInterval(mathjaxInterval)
+    }, 10)    
+  })()
+</script>
+    
+
+    <script src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js" async></script>
+<script async>
+  let fancyTimer = setInterval(function(){
+    if(!window.$){
+      return;
+    }
+    $(document).ready(function() {
+      $(".post img").each(function () {
+        if($(this).parent().get(0).tagName.toLowerCase() === "a") {
+          return;
+        }
+        // $(this).attr("data-fancybox", "gallery"); // if you add 'data-fancybox', img will display after showed
+        var element = document.createElement("a");
+        $(element).attr("data-fancybox", "gallery");
+        $(element).attr("href", $(this).attr("src"));
+        $(this).wrap(element);
+      });
+      
+      clearInterval(fancyTimer);
+    });
+  }, 10);
+</script>
+
+    
+  </body>
+
+</html>
