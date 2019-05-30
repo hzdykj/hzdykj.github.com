@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title><![CDATA[消息中间件系列之-RocketMQ(二)单机安装]]></title>
+    <url>%2F2019%2F05%2F30%2F%E6%B6%88%E6%81%AF%E4%B8%AD%E9%97%B4%E4%BB%B6%E7%B3%BB%E5%88%97%E4%B9%8B-RocketMQ%EF%BC%88%E4%BA%8C%EF%BC%89%E5%8D%95%E6%9C%BA%E5%AE%89%E8%A3%85%2F</url>
+    <content type="text"><![CDATA[作者：鲁班RocketMQ安装教程 按照前提本安装教程是基于linux进行的，在安装之前首先请确保1：一个安装有centos的服务器；2：已经安装了JDK1.8+;3：已经安装了maven3.0+4：服务器拥有超过4G的磁盘空间 下载对应的包如果不是用于源码研究，建议直接下载对应的二进制版本，下载地址 ，下载地址版本为4.4.0 下载完成之后将对应的安装包上传到对应的服务器 上传完成之后进入相对应的目录进行解压： unzip rocketmq-all-4.4.0-bin-release.zip 为了操作方便，便于记忆，对包名进行重命名： mv rocketmq-all-4.4.0-bin-release rocketmq-4.4.0 然后进入对应的文件夹： cd rocketmq-4.4.0 对项目进行编译： mvn -Prelease-all -DskipTests clean install -U]]></content>
+      <categories>
+        <category>消息中间件系列-RocketMQ</category>
+      </categories>
+      <tags>
+        <tag>消息中间件</tag>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[消息中间件系列之-RocketMQ(一)基础概念]]></title>
+    <url>%2F2019%2F05%2F30%2F%E6%B6%88%E6%81%AF%E4%B8%AD%E9%97%B4%E4%BB%B6%E7%B3%BB%E5%88%97%E4%B9%8B-RocketMQ(%E4%B8%80%EF%BC%89%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5%2F</url>
+    <content type="text"><![CDATA[作者：鲁班消息中间件就是实现一个消息队列（Message Queue，简称就是MQ）,就是把原本要马上处理的一个任务，放到消息中，这样就可以一定程度上解决系统瞬间压力增大的问题 消息中间件简介 什么是消息中间件，说法不一，说说我的理解 消息中间件就是实现一个消息队列（Message Queue，简称就是MQ）,就是把原本要马上处理的一个任务，放到消息中，这样就可以一定程度上解决系统瞬间压力增大的问题，当然其作用可以总结为： 削峰填谷（主要解决瞬时写压力大于应用服务能力导致消息丢失、系统奔溃等问题） 系统解耦（解决不同重要程度、不同能力级别系统之间依赖导致一死全死） 提升性能（当存在一对多调用时，可以发一条消息给消息系统，让消息系统通知相关系统） 蓄流压测（线上有些链路不好压测，可以通过堆积一定量消息再放开来压测） 常用消息队列对比 kafkaRocketMQRabbitMQ定位设计定位 系统之间的数据流管道，实时处理数据例如：常规的消息系统、网站活性跟踪、监控数据收集日志 非日志的可靠数据传输，例如：订单、交易、充值、流计算、消息推送 可靠消息传输，与RocketMQ类似基础对比成熟度日志领域成熟成熟成熟所属社区/公司apacheAlibaba开发，已加入到Apache下Mozilla Public License社区活跃度高中高api完备程度高高高文档完备程度高高高开发语言ScalajavaErlang支持协议一套自己设计的基于二进制TCP的协议自行定义的一套（社区提供JMS 不成熟）AMQP客户端语言C/C++、python、Go、Erlang、.Net、Ruby、node.js、php等javajava、C、C++、python、PHP等持久化方式磁盘文件磁盘文件内存、文件可用性、可靠性比较部署方式单机/集群单机/集群单机/集群集群管理zookeepername servermaster选举方式从jsr中自动选举一个leader不支持自动选举master，通过设定brokername、brokerId实现，brokename相同,brokerId=0为master,其他为slave最早加入集群的broker主从切换自动切换不支持自动切换自动切换可用性非常高，分布式、主从非常高，分布式、主从高，主从，采用镜像模式实现，数据量大的时候可能产生性能瓶颈数据可靠性很好，支持producer单条发送、同步刷盘、同步复制，但是这样的场景下性能明显下降很好，支持支持producer单条发送、broker支持同步刷盘、异步刷盘、同步双写、异步复制好，producer支持同步/异步ack，支持队列数据持久化，镜像模式中支持主从同步消息写入能力非常好，每条十个字节测试，百万条/s很好，每条十个字节测试，单机单broker约7w/s，单机3broker约12w/sRAm约为RocketMQ的1/2，Disk的性能约为RAM的1/3性能稳定性队列、分区多的时候性能不稳定，明显下降，消息堆积时性能稳定队列较多的时候性能稳定消息堆积时，性能不稳定，明显下降单机支持队列数单机超过64个队列/分区，load会发生明显飙高现象，队列越多，load越高，发送消息时间明显增加单机支持最高5w个队列，load不会发生明显变化依赖于内存堆积能力非常好，消息存储在log中，每个分区一个log非常好一般复制备份消息先写入leader的log，followers从leader中pull，pull到数据以后先ack leader，然后写入log，ISR 中维护与leader同步的列表，落后太多的follower会被删除掉同步双写，异步复制，slave启动线程从master中拉数据普通模式下不复制，镜像模式下，消息先到master，然后写到slave消息投递实时性毫秒级第二列第三列功能对比顺序消费支持顺序消费，但是一台broker宕机之后，就会产生消息乱序支持顺序消费，在顺序消费场景下，消费失效时，消费队列会暂停支持顺序消费，但是如果一个消费失效，此消息的顺序就会被打乱定时消息不支持开源版本仅支持定时level不支持事务消息不支持支持不支持broker端消息过滤不支持支持，通过tag过滤，类似于子topic不支持消息查询不支持支持，根据MessageId查询，支持根据MessageKey查询消息不支持消息失败重试不支持支持支持消息重新消费支持通过修改offset来重新消费支持按照时间来重新消费不支持发送端负载均衡可自由指定可自由指定需要单独loadbalancer支持消费并行度消费并行度和分区一致 顺序消费：消费并行度和分区一致 乱序消费：消费服务器的消费线程数之和第三列消费方式consumer pullconsumer pull/broker pushbroker push批量发送支持不支持不支持消息清理指定文件保存时间，过期删除指定文件保存时间，过期删除可用内存少于40%（默认），触发gc访问权限控制无无类似数据库，需要配置用户名与密码运维系统维护scala语言开发，维护成本高java语言开发，维护成本低Erlang语言开发，维护成本高部署依赖zookeepernameserverErlang环境后台管理官网不提供，第三方开发工具可以使用，不用重新开发官方提供，rocketmq-console官方提供，rabbitmq-admin总结优点 1：在高吞吐、低延迟、高可用、集群扩展、集群容错上有非常好的表现； 2：producer端提供缓存，压缩功能，可以提升性能，提高效率； 3：提供顺序消费能力； 4：提供多种客户端语言； 5：完善生态，在大数据处理方面有大量配套设施 1：在高吞吐、低延时、高可用上有非常好的表现，消息堆积时，性能也很好； 2：api，系统设计都更加适合在业务处理场景； 3：支持多种消费方式； 4：支持broker消息过滤； 5：支持事务； 6：提供消息顺序消费能力，consumer可以水平扩展，消费能力很强； 7：集群规模在50左右，单日可处理消息上百亿，经过大数据量考验，比较稳定可靠。 1：在高吞吐，高可用上比较前两者有所不如； 2：支持多种客户端语言，支持amqp协议； 3：由于Erlang语言的特性，性能也比较好，使用RAM模式时，性能很好； 4：管理界面比较丰富，在互联网公司也有比较大规模的应用缺点 1：消费集群数受到分区数目的限制； 2：单机topic多时，性能会明显下降； 3：不支持事务 1：相比于kafka，使用者比较少，生态不够完善，消息堆积，吞吐率上也有所不如； 2：不支持主从自动切换，master失效后，消费者要一定的时间才能感知； 3：客户端只支持java 1：erlang语言难度比较大，集群不支持动态扩展； 2：不支持事务，消息吞吐能力有限； 3：消息堆积时，性能会明显下降{% raw %} RocketMQ简介RocketMQ是阿里巴巴开源的一款分布式、队列模型的消息中间件，其主要的组成部分包括： NameServer、Broker（代理）、Producer(消息生产者)、Consumer(消息消费者) NameServerNameServer:rocketMQ名称服务器，一个几乎无状态节点，可集群部署，节点之间没有任何的信息同步 BrokerBroker：消息中转角色，负责存储和转发消息，broker分为master和slave 一个master可以对应多个slave，但是一个slave只能对应一个master， master和slave的对应关系通过指定相同的brokername，不同的brokerid来定义， brockerId为0的时候就为master，否则为slave，然后所有broker和nameserver上的节点 建立长连接，定时注册topic信息到所有的nameserver Producerproducer:消息生产者 Producer与nameserver其中一个节点建立连接，定期从nameserver中获取topic信息 并且提供该topic信息的master建立长连接，producer也可以集群部署 ConsumerConsumer:消息消费者 Consumer与Name Server集群中的其中一个节点建立长连接，定期从Name Server取Topic路由信息 并且提供Topic服务的Master、Slave建立长连接，并且定时向Master、Slave发送心跳 Consumer既可以从Master订阅消息，也可以从Slave订阅消息，订阅规则由Broker配置规定]]></content>
+      <categories>
+        <category>消息中间件系列-RocketMQ</category>
+      </categories>
+      <tags>
+        <tag>消息中间件</tag>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+</search>
