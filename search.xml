@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title></title>
+    <title><![CDATA[博客使用文档]]></title>
     <url>%2F2019%2F05%2F30%2F%E5%8D%9A%E5%AE%A2%E4%BD%BF%E7%94%A8%E6%96%87%E6%A1%A3%2F</url>
-    <content type="text"><![CDATA[1：从码云上克隆整个项目，地址为： https://gitee.com/hangzhou_deiyu/dy-blog.git 2：在/source/_posts 文件夹中创建 **.md文档 文档必须添加以下内容title: 文章标题 date: 日期 categories: 分类 tags: - 标签1 - 标签2 ... --- &lt;div&gt;作者：鲁班&lt;/div&gt; ... &lt;!-- more --&gt; ... 注：必须添加作者 3：在编辑完成后，执行命令查看或者上传 hexo s //运行查看 hexo g //编译 hexo deploy //上传]]></content>
+    <content type="text"><![CDATA[作者：鲁班博客怎么编辑1：从码云上克隆整个项目，地址为： https://gitee.com/hangzhou_deiyu/dy-blog.git 2：在/source/_posts 文件夹中创建 **.md文档 文档必须添加以下内容title: 文章标题 date: 日期 categories: 分类 tags: - 标签1 - 标签2 ... --- &lt;div&gt;作者：鲁班&lt;/div&gt; ... &lt;!-- more --&gt; ... 注：必须添加作者 3：在编辑完成后，执行命令查看或者上传 hexo s //运行查看 hexo g //编译 hexo deploy //上传]]></content>
+      <categories>
+        <category>使用文档</category>
+      </categories>
+      <tags>
+        <tag>使用文档</tag>
+      </tags>
   </entry>
   <entry>
     <title><![CDATA[消息中间件系列之-RocketMQ(二)单机安装]]></title>
